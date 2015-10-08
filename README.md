@@ -19,6 +19,8 @@ DOWNLOADER_MIDDLEWARES = {
 }
 ```
 
-### when to change proxy
+### change proxy
+
 Often, we wanna change to use a new proxy when our spider gets
-banned. Just edit the process_response function as the example.
+banned.  Just recognize your IP being banned and yield a new Request
+with meta["change_proxy"]=True in your Spider.parse method
