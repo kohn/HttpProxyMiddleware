@@ -86,7 +86,7 @@ class HttpProxyMiddleware(object):
                 self.proxyes.append({"proxy": "http://"  + np,
                                     "valid": True,
                                     "count": 0})
-        if self.len_valid_proxy < self.extend_proxy_threshold: # 如果发现抓不到什么新的代理了, 缩小threshold以避免白费功夫
+        if self.len_valid_proxy() < self.extend_proxy_threshold: # 如果发现抓不到什么新的代理了, 缩小threshold以避免白费功夫
             self.extend_proxy_threshold -= 1
 
     def len_valid_proxy(self):
