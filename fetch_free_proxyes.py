@@ -13,7 +13,7 @@ def get_html(url):
     return html.read()
 
 def get_soup(url):
-    soup = BeautifulSoup(get_html, "lxml")
+    soup = BeautifulSoup(get_html(url), "lxml")
     return soup
 
 def fetch_kxdaili(page):
@@ -111,8 +111,8 @@ def fetch_ip181():
             latency = tds[4].text[:-2]
             if float(latency) < 1:
                 proxyes.append("%s:%s" % (ip, port))
-    except:
-        logger.warning("fail to fetch from ip181")
+    except Exception as e:
+        logger.warning("fail to fetch from ip181: %s" % e)
     return proxyes
 
 def fetch_httpdaili():
@@ -136,8 +136,8 @@ def fetch_httpdaili():
                     proxyes.append("%s:%s" % (ip, port))
             except:
                 pass
-    except:
-        logger.warning("fail to fetch from httpdaili")
+    except Exception as e:
+        logger.warning("fail to fetch from httpdaili: %s" % e)
     return proxyes
 
 def fetch_66ip():
@@ -154,12 +154,23 @@ def fetch_66ip():
         for u in urls:
             if u.strip():
                 proxyes.append(u.strip())
-    except:
-        logger.warning("fail to fetch from httpdaili")
+    except Exception as e:
+        logger.warning("fail to fetch from httpdaili: %s" % e)
     return proxyes
 
-
     
+
+def check(proxy):
+    import urllib2
+    url = "http://www.baidu.com/js/bdsug.js?v=1.0.3.0"
+    proxy_handler = urllib2.ProxyHandler({'http': "http://" + proxy})
+    opener = urllib2.build_opener(proxy_handler,urllib2.HTTPHandler)
+    try:
+        respons e =opener.open(url,timeout=3)
+        return response.code == 200
+    except Exception as e:
+        return False
+
 def fetch_all(endpage=2):
     proxyes = []
     for i in range(1, endpage):
@@ -169,11 +180,23 @@ def fetch_all(endpage=2):
     proxyes += fetch_ip181()
     proxyes += fetch_httpdaili()
     proxyes += fetch_66ip()
-    return proxyes
+    valid_proxyes = []
+    logger.info("checking proxyes validation")
+    for p in proxyes:
+        if check(p):
+            valid_proxyes.append(p)
+    return valid_proxyes
 
 if __name__ == '__main__':
-    proxyes = fetch_66ip()
+    import sys
     root_logger = logging.getLogger("")
-    root_logger.addHandler(logging.StreamHandler())
+    stream_handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(name)-8s %(asctime)s %(levelname)-8s %(message)s', '%a, %d %b %Y %H:%M:%S',)
+    stream_handler.setFormatter(formatter)
+    root_logger.addHandler(stream_handler)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    proxyes = fetch_all()
+    #print check("202.29.238.242:3128")
     for p in proxyes:
         print p
