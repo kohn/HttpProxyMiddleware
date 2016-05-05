@@ -1,9 +1,11 @@
-* HttpProxyMiddlware
+* HttpProxyMiddleware
 
 A middleware for scrapy. Used to change HTTP proxy from time to time.
 
 Initial proxyes are stored in a file. During runtime, the middleware
 will fetch new proxyes if it finds out lack of valid proxyes.
+
+Related blog: [[http://www.kohn.com.cn/wordpress/?p=208]]
 
 
 ** fetch_free_proxyes.py
@@ -29,7 +31,7 @@ Just recognize your IP being banned and yield a new Request in your
 Spider.parse method with:
 
 #+BEGIN_SRC python
-request.meta["change_proxy"]=True
+request.meta["change_proxy"] = True
 #+END_SRC
 
 Some proxy may return invalid HTML code. So if you get any exception
