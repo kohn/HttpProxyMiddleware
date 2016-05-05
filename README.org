@@ -19,7 +19,7 @@ youself.
 #+BEGIN_SRC python
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 3,
-    # put this middleware behind retrymiddleware
+    # put this middleware after RetryMiddleware
     'crawler.middleware.HttpProxyMiddleware': 4,
 }
 #+END_SRC
