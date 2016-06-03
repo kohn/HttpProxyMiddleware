@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import logging
+import os
 from datetime import datetime, timedelta
 from twisted.web._newclient import ResponseNeverReceived
 from twisted.internet.error import TimeoutError, ConnectionRefusedError, ConnectError
@@ -28,8 +29,7 @@ class HttpProxyMiddleware(object):
         # 如果这个数过小, 例如两个, 爬虫用A ip爬了没几个就被ban, 换了一个又爬了没几次就被ban, 这样整个爬虫就会处于一种忙等待的状态, 影响效率
         self.extend_proxy_threshold = 10
         # 初始化代理列表
-        self.proxyes = [{"proxy": None, "valid": True, "count": 0}, {"proxy": "http://10.10.2.58:6666", "valid": True, "count": 0},
-                        {"proxy": "http://10.110.93.95:8088", "valid": True, "count": 0}]
+        self.proxyes = [{"proxy": None, "valid": True, "count": 0}]
         # 初始时使用0号代理(即无代理)
         self.proxy_index = 0
         # 表示可信代理的数量(如自己搭建的HTTP代理)+1(不用代理直接连接)
@@ -41,15 +41,16 @@ class HttpProxyMiddleware(object):
         # 一个将被设为invalid的代理如果已经成功爬取大于这个参数的页面， 将不会被invalid
         self.invalid_proxy_threshold = 200
         # 从文件读取初始代理
-        with open(self.proxy_file, "r") as fd:
-            lines = fd.readlines()            
-            for line in lines:
-                line = line.strip()
-                if not line or self.url_in_proxyes("http://" + line):
-                    continue
-                self.proxyes.append({"proxy": "http://"  + line,
-                                    "valid": True,
-                                    "count": 0})
+	if os.path.exists(self.proxy_file):
+	    with open(self.proxy_file, "r") as fd:
+		lines = fd.readlines()            
+		for line in lines:
+		    line = line.strip()
+		    if not line or self.url_in_proxyes("http://" + line):
+			continue
+		    self.proxyes.append({"proxy": "http://"  + line,
+					"valid": True,
+					"count": 0})
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -158,6 +159,7 @@ class HttpProxyMiddleware(object):
         并调整当前proxy_index到下一个有效代理的位置
         """
         if index < self.fixed_proxy: # 可信代理永远不会设为invalid
+	    self.inc_proxy_index()
             return
    
         if self.proxyes[index]["valid"]:
@@ -218,6 +220,7 @@ class HttpProxyMiddleware(object):
             new_request = request.copy()
             new_request.dont_filter = True
             return new_request
+	return response
 
     def process_exception(self, request, exception, spider):
         """

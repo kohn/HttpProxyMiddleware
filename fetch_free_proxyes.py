@@ -166,9 +166,9 @@ def check(proxy):
     proxy_handler = urllib2.ProxyHandler({'http': "http://" + proxy})
     opener = urllib2.build_opener(proxy_handler,urllib2.HTTPHandler)
     try:
-        respons e =opener.open(url,timeout=3)
+        response = opener.open(url,timeout=3)
         return response.code == 200
-    except Exception as e:
+    except Exception:
         return False
 
 def fetch_all(endpage=2):
