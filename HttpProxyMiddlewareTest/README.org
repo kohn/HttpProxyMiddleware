@@ -1,0 +1,11 @@
+* HttpProxyMiddlewareTest
+
+A scrapy project used to test [[https://github.com/kohn/HttpProxyMiddleware][HttpProxyMiddleware]].
+
+* Usage
+
+Update HttpProxyMiddleware position in
+HttpProxyMiddlewareTest/settings.py.
+
+Run Command:
+: scrapy crawl test
