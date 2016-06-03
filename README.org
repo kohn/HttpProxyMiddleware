@@ -59,3 +59,22 @@ website_possible_httpstatus_list = [404]
 This line tolds the middleware that the website you're crawling would
 possibly return a response whose status code is 404, and do not
 discard the proxy that this request is using.
+
+
+** Test
+
+Update HttpProxyMiddleware.py path in
+HttpProxyMiddlewareTest/settings.py.
+
+
+#+BEGIN_SRC sh
+cd HttpProxyMiddlewareTest
+scrapy crawl test
+#+END_SRC
+
+
+The testing server is hosted on my VPS, so take it easy... DO NOT
+waste too much of my data plan.
+
+You may start your own testing server using IPBanTest which is powered
+by Django.
