@@ -84,10 +84,10 @@ def fetch_xici():
         for i in range(1, len(trs)):
             tr = trs[i]
             tds = tr.find_all("td")
-            ip = tds[2].text
-            port = tds[3].text
-            speed = tds[7].div["title"][:-1]
-            latency = tds[8].div["title"][:-1]
+            ip = tds[1].text
+            port = tds[2].text
+            speed = tds[6].div["title"][:-1]
+            latency = tds[7].div["title"][:-1]
             if float(speed) < 3 and float(latency) < 1:
                 proxyes.append("%s:%s" % (ip, port))
     except:
@@ -167,7 +167,7 @@ def check(proxy):
     opener = urllib2.build_opener(proxy_handler,urllib2.HTTPHandler)
     try:
         response = opener.open(url,timeout=3)
-        return response.code == 200
+        return response.code == 200 and response.url == url
     except Exception:
         return False
 
@@ -185,6 +185,7 @@ def fetch_all(endpage=2):
     for p in proxyes:
         if check(p):
             valid_proxyes.append(p)
+            print p
     return valid_proxyes
 
 if __name__ == '__main__':
