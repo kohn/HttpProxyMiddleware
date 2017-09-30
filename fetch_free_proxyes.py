@@ -1,22 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import logging
 
 logger = logging.getLogger(__name__)
 
 def get_html(url):
-    request = urllib2.Request(url)
+    request = urllib.request.Request(url)
     request.add_header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.99 Safari/537.36")
-    html = urllib2.urlopen(request)
+    html = urllib.request.urlopen(request)
     return html.read()
 
 def get_soup(url):
     soup = BeautifulSoup(get_html(url), "lxml")
     return soup
 
-def fetch_kxdaili(page):
+def fetch_kxdaili(page, https):
     """
     从www.kxdaili.com抓取免费代理
     """
@@ -30,11 +30,18 @@ def fetch_kxdaili(page):
             tds = tr.find_all("td")
             ip = tds[0].text
             port = tds[1].text
+            types = tds[2].text
+            if https and "HTTPS" not in types:
+                continue
             latency = tds[4].text.split(" ")[0]
             if float(latency) < 0.5: # 输出延迟小于0.5秒的代理
-                proxy = "%s:%s" % (ip, port)
+                if https:
+                    proxy = "https://%s:%s" % (ip, port)
+                else:
+                    proxy = "http://%s:%s" % (ip, port)
                 proxyes.append(proxy)
-    except:
+    except Exception as e:
+        logger.warning(e)
         logger.warning("fail to fetch from kxdaili")
     return proxyes
 
@@ -48,11 +55,13 @@ def img2port(img_url):
     else:
         return None
 
-def fetch_mimvp():
+def fetch_mimvp(https):
     """
     从http://proxy.mimvp.com/free.php抓免费代理
     """
     proxyes = []
+    if https:
+        return proxyes
     try:
         url = "http://proxy.mimvp.com/free.php?proxy=in_hp"
         soup = get_soup(url)
@@ -71,7 +80,7 @@ def fetch_mimvp():
         logger.warning("fail to fetch from mimvp")
     return proxyes
 
-def fetch_xici():
+def fetch_xici(https):
     """
     http://www.xicidaili.com/nn/
     """
@@ -84,17 +93,22 @@ def fetch_xici():
         for i in range(1, len(trs)):
             tr = trs[i]
             tds = tr.find_all("td")
-            ip = tds[2].text
-            port = tds[3].text
-            speed = tds[7].div["title"][:-1]
-            latency = tds[8].div["title"][:-1]
+            ip = tds[1].text
+            port = tds[2].text
+            if https and tds[5].text.strip()!="HTTPS":
+                continue
+            speed = tds[6].div["title"][:-1]
+            latency = tds[7].div["title"][:-1]
             if float(speed) < 3 and float(latency) < 1:
-                proxyes.append("%s:%s" % (ip, port))
+                if https:
+                    proxyes.append("https://%s:%s" % (ip, port))
+                else:
+                    proxyes.append("http://%s:%s" % (ip, port))
     except:
         logger.warning("fail to fetch from xici")
     return proxyes
 
-def fetch_ip181():
+def fetch_ip181(https):
     """
     http://www.ip181.com/
     """
@@ -108,19 +122,26 @@ def fetch_ip181():
             tds = trs[i].find_all("td")
             ip = tds[0].text
             port = tds[1].text
+            if https and "HTTPS" not in tds[3].text:
+                continue
             latency = tds[4].text[:-2]
             if float(latency) < 1:
-                proxyes.append("%s:%s" % (ip, port))
+                if https:
+                    proxyes.append("https://%s:%s" % (ip, port))
+                else:
+                    proxyes.append("http://%s:%s" % (ip, port))
     except Exception as e:
         logger.warning("fail to fetch from ip181: %s" % e)
     return proxyes
 
-def fetch_httpdaili():
+def fetch_httpdaili(https):
     """
     http://www.httpdaili.com/mfdl/
     更新比较频繁
     """
     proxyes = []
+    if https:
+        return proxyes    
     try:
         url = "http://www.httpdaili.com/mfdl/"
         soup = get_soup(url)
@@ -132,7 +153,7 @@ def fetch_httpdaili():
                 ip = tds[0].text
                 port = tds[1].text
                 type = tds[2].text
-                if type == u"匿名":
+                if type == "匿名":
                     proxyes.append("%s:%s" % (ip, port))
             except:
                 pass
@@ -140,7 +161,7 @@ def fetch_httpdaili():
         logger.warning("fail to fetch from httpdaili: %s" % e)
     return proxyes
 
-def fetch_66ip():
+def fetch_66ip(https):
     """    
     http://www.66ip.cn/
     每次打开此链接都能得到一批代理, 速度不保证
@@ -148,38 +169,52 @@ def fetch_66ip():
     proxyes = []
     try:
         # 修改getnum大小可以一次获取不同数量的代理
-        url = "http://www.66ip.cn/nmtq.php?getnum=10&isp=0&anonymoustype=3&start=&ports=&export=&ipaddress=&area=1&proxytype=0&api=66ip"
+        if https:
+            url = "http://www.66ip.cn/nmtq.php?getnum=10&isp=0&anonymoustype=3&start=&ports=&export=&ipaddress=&area=1&proxytype=1&api=66ip"
+        else:
+            url = "http://www.66ip.cn/nmtq.php?getnum=10&isp=0&anonymoustype=3&start=&ports=&export=&ipaddress=&area=1&proxytype=0&api=66ip"
         content = get_html(url)
-        urls = content.split("</script>")[-1].split("<br />")
+        content = str(content)
+        urls = content.split("</script>")[1].split("</div>")[0].split("<br />")
         for u in urls:
+            u = u.split("\\t")[-1]
             if u.strip():
-                proxyes.append(u.strip())
+                if https:
+                    proxyes.append("https://" + u.strip())
+                else:
+                    proxyes.append("http://" + u.strip())
+                    
     except Exception as e:
-        logger.warning("fail to fetch from httpdaili: %s" % e)
+        logger.warning("fail to fetch from 66ip: %s" % e)
     return proxyes
 
     
 
 def check(proxy):
-    import urllib2
-    url = "http://www.baidu.com/js/bdsug.js?v=1.0.3.0"
-    proxy_handler = urllib2.ProxyHandler({'http': "http://" + proxy})
-    opener = urllib2.build_opener(proxy_handler,urllib2.HTTPHandler)
+    import urllib.request, urllib.error, urllib.parse
+    
+    if proxy.startswith("https"):
+        url = "https://www.baidu.com/js/bdsug.js?v=1.0.3.0"
+        proxy_handler = urllib.request.ProxyHandler({'https': proxy})
+    else:
+        url = "http://www.baidu.com/js/bdsug.js?v=1.0.3.0"
+        proxy_handler = urllib.request.ProxyHandler({'http': proxy})
+    opener = urllib.request.build_opener(proxy_handler,urllib.request.HTTPHandler)
     try:
-        response = opener.open(url,timeout=3)
-        return response.code == 200
+        response = opener.open(url, timeout=3)
+        return response.code == 200 and response.url == url
     except Exception:
         return False
 
-def fetch_all(endpage=2):
+def fetch_all(endpage=2, https=False):
     proxyes = []
     for i in range(1, endpage):
-        proxyes += fetch_kxdaili(i)
-    proxyes += fetch_mimvp()
-    proxyes += fetch_xici()
-    proxyes += fetch_ip181()
-    proxyes += fetch_httpdaili()
-    proxyes += fetch_66ip()
+        proxyes += fetch_kxdaili(i, https=https)
+    proxyes += fetch_mimvp(https)
+    proxyes += fetch_xici(https)
+    proxyes += fetch_ip181(https)
+    proxyes += fetch_httpdaili(https)
+    proxyes += fetch_66ip(https)
     valid_proxyes = []
     logger.info("checking proxyes validation")
     for p in proxyes:
@@ -196,7 +231,7 @@ if __name__ == '__main__':
     root_logger.addHandler(stream_handler)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    proxyes = fetch_all()
+    proxyes = fetch_66ip(https=True)
     #print check("202.29.238.242:3128")
     for p in proxyes:
-        print p
+        print(p)
