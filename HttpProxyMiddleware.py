@@ -41,7 +41,7 @@ class HttpProxyMiddleware(object):
         # 一个将被设为invalid的代理如果已经成功爬取大于这个参数的页面， 将不会被invalid
         self.invalid_proxy_threshold = 200
         # 使用http代理还是https代理
-        self.uses_https = use_https
+        self.use_https = use_https
         # 从文件读取初始代理
         if os.path.exists(self.proxy_file):
             with open(self.proxy_file, "r") as fd:
